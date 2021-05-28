@@ -158,7 +158,6 @@ Thumbs.db
 !.vscode/launch.json
 !.vscode/extensions.json
 *.code-workspace
-
 ### VisualStudioCode Patch ###
 # Ignore all local history of files
 .history
@@ -190,3 +189,5 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.toptal.com/developers/gitignore/api/python,windows,visualstudiocode
+.vscode/settings.json
+.vscode/settings.json

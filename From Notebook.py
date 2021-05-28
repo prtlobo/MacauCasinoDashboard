@@ -21,30 +21,33 @@
 # *Graham Number: sqrt((22.5)(EPS)(Book Value Per Share))
 # OR sqrt((22.5)(EPS)(shareholder's equity/shares outstanding))
 # * DCF- Over/under value  By = (Current Price / Fair Value price ) - 1 * 100
-# 
-# 
+# * Add different zoom levels units for dividend figure (tickformatstops)
+# * Representative colors for each company for traces
 # 
 
 # %%
+#import packages
 # pip install pandas
 # pip install plotly
 # pip install requests
 # pip install jupyter-dash
+# !pip install plotly --upgrade
+# from jupyter_dash import JupyterDash
 import pandas as pd
 import plotly.graph_objects as go
 import requests
 import dash
-# !pip install plotly --upgrade
 import plotly
-# from jupyter_dash import JupyterDash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Output, Input, State
 import datetime
 from plotly.subplots import make_subplots
-
+import dash_bootstrap_components as dbc
+import plotly.io as pio
 
 # %%
+#API call information
 #API_key = '3c48cfed0ed8536fa3d40f9234fed1fb'
 API_key = 'demo'
 ticker = 'AAPL'
@@ -88,12 +91,9 @@ AAPL[0]['Daily Cum. Return %'] = ((1 + AAPL[0]['Daily Returns']).cumprod()) * 10
 AAPL[6]['undervalue'] = ((AAPL[0]['close'] / AAPL[6]['dcf']))
 AAPL[5] = AAPL[5].merge(AAPL[0][['date', 'close']], on='date')
 AAPL[5]['divYield'] = AAPL[5]['adjDividend']/AAPL[5]['close']
-# %%
-
-fig= go.Figure()
-fig.add_trace(go.Bar(name='Dividends', x=AAPL[5]['date'], y= AAPL[5]['divYield'], xperiod='M1',xperiodalignment='middle'))
-fig.update_layout(yaxis_tickformat='.2%')
-fig.show()
+AAPL[5]['quarters']=AAPL[5]['date'].dt.quarter
+AAPL[5]['year']=AAPL[5]['date'].dt.year
+AAPL[5]['columnText']='Q'+AAPL[5]['quarters'].astype(str)+' '+AAPL[5]['year'].astype(str)
 # %% [markdown]
 #AAPL[1] -> dividendYield
 #AAPL[1] -> payoutRatio
@@ -101,29 +101,76 @@ fig.show()
 # %%
 fig= go.Figure()
 fig = make_subplots(specs=[[{"secondary_y": True}]])
-fig.add_trace(go.Bar(name='Dividends', x=AAPL[5]['date'], y= AAPL[5]['adjDividend'], xperiod='M1',xperiodalignment='middle'),secondary_y=False)
-#,secondary_y=False
-fig.add_trace(go.Scatter(x = AAPL[5]['date'], y =AAPL[5]['divYield'],
+
+fig.add_trace(go.Bar(name='Dividends', 
+                    x=AAPL[5]['columnText'], 
+                    y= AAPL[5]['adjDividend'],
+                    xperiod='M1',
+                    xperiodalignment='middle')
+                    ,secondary_y=False
+                    )
+
+fig.add_trace(go.Scatter(x = AAPL[5]['columnText'], y =AAPL[5]['divYield'],
                   mode = 'lines+markers',
                   line_shape= 'spline',
                   name='Dividend Yield', 
                   xperiod='M1',
                   xperiodalignment='middle'),secondary_y=True)
+fig.update_layout(
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+    hovermode='x unified',
+    yaxis=dict(
+        title='Dividend per share (DPS)',
+        tickprefix='$'
+    ),
+    yaxis2=dict(
+        title='Dividend Yield',
+        anchor='y',
+        overlaying='y',
+        side='right',
+        tickformat='.2%'
+)
+)
+#
+#
+#fig.update_xaxes(
+#    type='category',
+#    ticktext=AAPL[5]['columnText'],
+#    tickvals=AAPL[5]['date'],
+#)
+
+#fig.update_xaxes(type='category',
+#                dtick='M1',
+#                tickformat='%b\b%Y')
+#fig.update_layout(
+#    xaxis_tickformatstops = [
+#        dict(dtickrange=["M1", "M12"], value="%b \n %Y"),
+#        dict(dtickrange=["M12", None], value="%q \n %Y")
+#    ]
+#)
+#fig.update_xaxes(dtick='M1',
+#                tickformat='%q\n%Y')
 #.dt.strftime('%m-%Y')
-fig.update_layout(yaxis_tickformat='.2%',secondary_y=True)
+#fig.update_layout(yaxis_tickformat='.2%',secondary_y=True)
 fig.show()
 
 
 # %%
-app = dash.Dash(__name__)
+app = dash.Dash(external_stylesheets=[dbc.themes.DARKLY])
 
 app.title = 'Macau Casinos'
+pio.templates.default = "plotly_dark"
+
+
 #create stock figure
-datastock=go.Scatter(x=AAPL[0]['date'], y=AAPL[0]['close'],
+stock=go.Figure()
+stock.add_trace(go.Scatter(x=AAPL[0]['date'], y=AAPL[0]['close'],
   mode='lines',
-  name=ticker)
-layoutstock = go.Layout(
-    title='AAPL Daily Stock',
+  name=ticker))
+stock.update_layout(
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
     xaxis=dict(
         rangeslider_visible=True,
         rangeselector=dict(
@@ -138,43 +185,47 @@ layoutstock = go.Layout(
         )
     )
 )
-stock=go.Figure(data=datastock,layout=layoutstock)
 
 #Create Cumilative gain figure
-trace1 = go.Scatter(x=AAPL[0]['date'], y=AAPL[0]['Daily Cum. Return %'],
+cumilative=go.Figure()
+cumilative.add_trace(go.Scatter(x=AAPL[0]['date'], y=AAPL[0]['Daily Cum. Return %'],
                   mode='lines',
-                  showlegend = False,
-                  name=ticker)
-trace2= go.Scatter(x=[AAPL[0]['date'].iloc[-1]],
-                         y=[AAPL[0]['Daily Cum. Return %'].iloc[-1]],
-                         text=[AAPL[0]['Daily Cum. Return %'].iloc[-1]],
-                         mode='markers+text',
-                        showlegend = False,
-                        textposition='top right')
+                  showlegend = True,
+                  name=ticker))
 
-layoutcumilative = go.Layout(
+cumilative.update_layout(
     xaxis = dict(showgrid=False),
-    yaxis = dict(showgrid=False)
+    yaxis = dict(showgrid=False),
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
 )
-cumilative = go.Figure(data=[trace1,trace2],layout=layoutcumilative)
-
+cumilative.update_xaxes(
+                ticks = 'outside',
+                ticklen = 10
+    )
 #create ratio figures
 ROCE=go.Scatter(x = AAPL[1]['year'], y =AAPL[1]['returnOnCapitalEmployed'],
+                  name = 'ROCE',
                   mode = 'lines+markers',
                   line_shape= 'spline')
 ROE = go.Scatter(x = AAPL[1]['year'], y =AAPL[1]['returnOnEquity'],
+                  name = 'ROE',
                   mode = 'lines+markers',
                   line_shape = 'spline')
 PEG = go.Scatter(x = AAPL[1]['year'], y =AAPL[1]['priceEarningsToGrowthRatio'],
+                  name = 'PEG',
                   mode = 'lines+markers',
                   line_shape= 'spline')
 P_B = go.Scatter(x = AAPL[1]['year'], y =AAPL[1]['priceToBookRatio'],
+                  name = 'P/B',
                   mode = 'lines+markers',
                   line_shape= 'spline')
 P_E = go.Scatter(x = AAPL[1]['year'], y =AAPL[1]['priceEarningsRatio'],
+                  name = 'P/E',
                   mode = 'lines+markers',
                   line_shape= 'spline')
 ROA = go.Scatter(x = AAPL[1]['year'], y =AAPL[1]['returnOnAssets'],
+                  name = 'ROA',
                   mode = 'lines+markers',
                   line_shape= 'spline')
 
@@ -182,6 +233,8 @@ layout_ratios = go.Layout(
     xaxis_tickmode = 'array',
     xaxis_tickvals = AAPL[1]['year'],
     xaxis_ticktext = AAPL[1]['year'],
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
     yaxis_showgrid = False)
 
 ROCE_plot = go.Figure(data=ROCE,layout=layout_ratios)
@@ -192,13 +245,19 @@ P_E_plot = go.Figure(data=P_E,layout=layout_ratios)
 ROA_plot = go.Figure(data=ROA,layout=layout_ratios)
 
 #create cashflow figure
-cash_trace1 = go.Bar(name='Operating', x=AAPL[4]['year'], y= AAPL[4]['netCashProvidedByOperatingActivities'])
-cash_trace2 = go.Bar(name='Investing', x=AAPL[4]['year'], y=AAPL[4]['netCashUsedForInvestingActivites'])
-cash_trace3 = go.Bar(name='Financing', x=AAPL[4]['year'], y=AAPL[4]['netCashUsedProvidedByFinancingActivities'])
-
-
-cash_flow = go.Figure(data=[cash_trace1,cash_trace2,cash_trace3])
-
+cash_flow = go.Figure()
+cash_flow.add_trace(go.Bar(name='Operating', 
+                            x=AAPL[4]['year'], 
+                            y= AAPL[4]['netCashProvidedByOperatingActivities']))
+cash_flow.add_trace(go.Bar(name='Investing', 
+                            x=AAPL[4]['year'], 
+                            y=AAPL[4]['netCashUsedForInvestingActivites']))
+cash_flow.add_trace(go.Bar(name='Financing', 
+                            x=AAPL[4]['year'], 
+                            y=AAPL[4]['netCashUsedProvidedByFinancingActivities']))
+cash_flow.update_layout(
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)')
 #create Assets to Liabilites figure
 
 A_to_L = make_subplots(specs=[[{"secondary_y": True}]])
@@ -208,6 +267,10 @@ A_to_L.add_trace(go.Scatter(x = AAPL[1]['year'], y =AAPL[1]['debtEquityRatio'],
                   mode = 'lines+markers',
                   line_shape= 'spline',
                   name='Debt to Equity Ratio'),secondary_y=True)
+A_to_L.update_layout(
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+)
 A_to_L.update_yaxes(title_text = 'Assets & Liabilites (USD)', secondary_y=False)
 A_to_L.update_yaxes(title_text= ' Debt To Equity Ratio', secondary_y=True)            
 
@@ -219,6 +282,10 @@ profit_margin.add_trace(go.Scatter(x = AAPL[1]['year'], y =AAPL[1]['netProfitMar
                   mode = 'lines+markers',
                   line_shape= 'spline',
                   name='Net Profit Margin'),secondary_y=True)
+profit_margin.update_layout(
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+)
 #Create Earning and Revenue CAGR
 
 def CAGR_revenue(df, year):
@@ -252,6 +319,8 @@ for year in years:
     CAGR_fig.add_trace(go.Bar(name='Revenue Growth', x=['{} to {}'.format(revenue[1],revenue[2])], y= [revenue[0]], visible=False))
 
 CAGR_fig.update_layout(yaxis_tickformat='%',
+                        paper_bgcolor = 'rgba(0,0,0,0)',
+                        plot_bgcolor='rgba(0,0,0,0)',
                   updatemenus=[                    
         dict(
             type = 'buttons',
@@ -277,15 +346,71 @@ CAGR_fig.update_layout(yaxis_tickformat='%',
 DCF = go.Figure()
 DCF.add_trace(go.Scatter(x = AAPL[6]['date'], y =AAPL[6]['dcf'], name ='Fair Value',visible=True))
 DCF.add_trace(go.Scatter(x = AAPL[0]['date'], y =AAPL[0]['close'], name ='Price', visible=True ))
-
+DCF.update_layout(
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+)
 #create price/fair value ratio figure
 fair_DCF = go.Figure()
 ymax = AAPL[6]['undervalue'].max()*1.05
 fair_DCF.add_hline(y=1, line_dash='dash')
-fair_DCF.add_hrect(y0=0, y1=1, line_width=0, fillcolor="green", opacity=0.2,annotation_text='UNDERVALUED', annotation_position='top left')
-fair_DCF.add_hrect(y0=1, y1=ymax, line_width=0, fillcolor="red", opacity=0.2,annotation_text='OVERVALUED', annotation_position='bottom left')
+fair_DCF.add_hrect(y0=0, 
+                    y1=1, 
+                    line_width=0, 
+                    fillcolor="green", 
+                    opacity=0.2, 
+                    annotation_text='UNDERVALUED', 
+                    annotation_position='top left',
+                    layer='below')
+fair_DCF.add_hrect(y0=1, 
+                    y1=ymax, 
+                    line_width=0, 
+                    fillcolor="red", 
+                    opacity=0.2,
+                    annotation_text='OVERVALUED', 
+                    annotation_position='bottom left',
+                    layer = 'below')
 fair_DCF.add_trace(go.Scatter(x = AAPL[6]['date'], y =AAPL[6]['undervalue'], name ='Price/DCF Ratio'))
 fair_DCF.update_yaxes(zeroline=False)
+fair_DCF.update_layout(
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+)
+# Create dividend and dividend yield figure
+dividend = go.Figure()
+dividend = make_subplots(specs=[[{"secondary_y": True}]])
+
+dividend.add_trace(go.Bar(name='Dividends', 
+                    x=AAPL[5]['columnText'], 
+                    y= AAPL[5]['adjDividend'],
+                    xperiod='M1',
+                    xperiodalignment='middle')
+                    ,secondary_y=False
+                    )
+
+dividend.add_trace(go.Scatter(x = AAPL[5]['columnText'], y =AAPL[5]['divYield'],
+                  mode = 'lines+markers',
+                  line_shape= 'spline',
+                  name='Dividend Yield', 
+                  xperiod='M1',
+                  xperiodalignment='middle'),secondary_y=True)
+dividend.update_layout(
+    hovermode='x unified',
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+    yaxis=dict(
+        title='Diividend per share (DPS)',
+        tickprefix='$'
+    ),
+    yaxis2=dict(
+        title='Dividend Yield',
+        anchor='y',
+        overlaying='y',
+        side='right',
+        tickformat='.2%'
+    )
+)
+
 #app layouts
 app.layout = html.Div(children=[
     html.Div([
@@ -378,7 +503,14 @@ app.layout = html.Div(children=[
         html.Div(id='result14'),
         
         dcc.Graph(id='graph14', figure=fair_DCF)
+    ]),
+    html.Div([
+        html.H2('Dividend & Dividend Yield'),
+        html.Div(id='result15'),
+        
+        dcc.Graph(id='graph15', figure=dividend)
     ])
+
 ])
 
 #def zoom(layout, xrange):

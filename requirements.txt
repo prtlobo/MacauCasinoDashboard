@@ -3,3 +3,4 @@ plotly
 requests
 pandas
 ipykernel
+nbformat
