@@ -9,10 +9,103 @@
 # * Melco: MLCO NASDAQ
 # 
 # %% [markdown]
+# Overview:
+#   Stock graph
+#       price
+#       Fair value Price
+#       MArket Cap
+#       52 week low
+#       52 week high
+#       P/E
+#       P/B
+#       P/S
+#       PEG
+#       Dividend yield
+#       Revenue
+#       EArnings
+#       Gross Margin
+#       Operating Margin
+#       Profit Margin
+#       Debt To equity
+#       operating Cash flow
+#       Beta
+#       Next Earnings
+#       Ex-dividend
+#       next dividend
+#   Valuation:
+#       Fair Value(DCF)
+#       Price to Earnings
+#       Price to Book
+#       Price to earnings Growth
+#   Financial health:
+#       Profit Margin
+#       Assets to liabilities
+#       Cash Flow
+# Forcast:
+#   Analyst price target
+#   buy/sell meter
+#   Forcast return on equity
+#   forcast return on assets
+#   forcast earnings per share
+#   revenue forcast
+#   Earnings growth forcast
+#   Revenue growth forcast
+# Earnings:
+#   Past earnings growth
+#   past revenue growth
+#   Earnings and revenue history
+#   Return on equity
+#   Return on assets
+#   REturn on capital Employed
+# Dividend:
+#   Dividend stability and growth
+#   Dividend payout ratio
+# Ownership
+#   buying vs selling
+#   Shareholders
+
+
+# 1 Executive summary:
+#   1.1 starburst chart
+# 2 Share Price & news:
+#   2.1 stock chart with events
+#   2.2 market performance 7D,30D,90D,1Y,3Y 5Y returns vs Segment VS market
+#   2.3 news
+# 3 Valuation:
+#   price to earnings ratio
+#   3.1 share price vs fair value
+#   3.2 Price to earnings ratio
+#   3.3 Price to earning growth ratio
+#   3.4 Price to book ratio
+# 4 Future growth:
+#   forcasted annual earnings growth
+#   4.1 earnings and revenue growth forcast line chart
+#   4.2 analyst future growth forcasts (annual) bar chart
+#   4.2 Earnings per share growth forcast line chart
+#   4.4 future return on equity
+# 5 Past performance:
+#   historical annual earnings growth
+#   5.1 earnings and revenue history line chart
+#   5.2 Past eanings growth analysis (5Y vs 1Y growth)
+#   5.3 Return on equity
+#   5.4 return on assets
+#   5.5 return on capitcal employed
+# 6 financial health:
+#   6.1 financial position short term & long term assest vs liabilites bar chart
+#   6.2 Debt to equity history (debt vs equity line chart)
+#   6.3 balance sheet marimekko charts
+# 7 dividend:
+#   current dividend yield
+#   7.1 dividend yield vs market
+#   7.2 stability and growth of payments line chart
+#   7.3 Current payout to shareholders
+#   7.4 future payout to shareholders
+
+# %% [markdown]
 # To Do:
 # 
-# *   Sector Performance ratios?
-# *   Loop through all api functions
+# * Sector Performance ratios?
+# * Loop through all api functions
 # * add vertical lines with date and annotation (major news)
 # * PEG chart chaange to under vs Over valued
 # * DPS = Total Dividends paid/shares outstanding
@@ -23,7 +116,8 @@
 # * DCF- Over/under value  By = (Current Price / Fair Value price ) - 1 * 100
 # * Add different zoom levels units for dividend figure (tickformatstops)
 # * Representative colors for each company for traces
-# 
+# * Vectorize datafram functions to make it faster
+# * input dcc.Loading for loading pages
 
 # %%
 #import packages
@@ -33,6 +127,7 @@
 # pip install jupyter-dash
 # !pip install plotly --upgrade
 # from jupyter_dash import JupyterDash
+from numpy import frompyfunc
 import pandas as pd
 import plotly.graph_objects as go
 import requests
@@ -45,12 +140,11 @@ import datetime
 from plotly.subplots import make_subplots
 import dash_bootstrap_components as dbc
 import plotly.io as pio
+import config
 
 # %%
 #API call information
-#API_key = '3c48cfed0ed8536fa3d40f9234fed1fb'
-API_key = 'demo'
-ticker = 'AAPL'
+tickers = {'SJM':'0880.HK','MGM':'2282.HK','GEG':'0027.HK','SANDS':'1928.HK','WYNN':'1128.HK'}
 site = 'https://financialmodelingprep.com'
 api_functions = {'stock':'/api/v3/historical-price-full/{}?serietype=line&apikey={}',
                 'ratios':'/api/v3/ratios/{}?apikey={}',
@@ -58,70 +152,151 @@ api_functions = {'stock':'/api/v3/historical-price-full/{}?serietype=line&apikey
                 'a_balance': '/api/v3/balance-sheet-statement/{}?&apikey={}',
                 'a_cash':'/api/v3/cash-flow-statement/{}?&apikey={}',
                 'dividend':'/api/v3/historical-price-full/stock_dividend/{}?apikey={}',
-                'DCF':'/api/v3/historical-daily-discounted-cash-flow/{}?&apikey={}'               
+                'd_DCF':'/api/v3/historical-daily-discounted-cash-flow/{}?&apikey={}',
+                'a_DCF':'/api/v3/historical-discounted-cash-flow-statement/'
+}
+# %%
+# Call API
+# Define API GET request
+def API_call(ticker, link, key):
+    #Format API GET url for desired functions
+    url = 'https://financialmodelingprep.com'+(link.format(ticker, key))
+    response = requests.get(url)
+    data = response.json()
+    #If the function returns a nested json, need to normalize on key
+    #For FMP, historical stock and dividends are nested
+    if len(data) == 2:
+        df = pd.json_normalize(data,'historical')
+        df.sort_values('date',ascending=True,inplace=True, ignore_index=True)
+        df['date'] =  pd.to_datetime(df['date'])
+#        df.set_index(keys='date',inplace=True)
+    elif len(data) > 2:
+        df = pd.json_normalize(data)
+        df.sort_values('date',ascending=True,inplace=True, ignore_index=True)
+        df['date'] =  pd.to_datetime(df['date'])
+#        df.set_index(keys='date',inplace=True)
+    else:
+        df = pd.DataFrame()
+    return df
+
+companies = pd.DataFrame(
+    {'Name':['SJM','MGM','GEG','SANDS','WYNN'],
+    'Ticker':['0880.HK','2282.HK','0027.HK','1928.HK','1128.HK'],
+    'Color':['red','green','pink','blue','yellow']
+    })
+
+api_functions = {'stock':'/api/v3/historical-price-full/{}?serietype=line&apikey={}',
+                'ratios':'/api/v3/ratios/{}?apikey={}',
+                'a_income':'/api/v3/income-statement/{}?&apikey={}',
+                'a_balance': '/api/v3/balance-sheet-statement/{}?&apikey={}',
+                'a_cash':'/api/v3/cash-flow-statement/{}?&apikey={}',
+                'dividend':'/api/v3/historical-price-full/stock_dividend/{}?apikey={}',
+                'd_DCF':'/api/v3/historical-daily-discounted-cash-flow/{}?&apikey={}',
+                'a_DCF':'/api/v3/historical-discounted-cash-flow-statement/{}?&apikey={}'
 }
 
-#'q_cash':'/api/v3/cash-flow-statement/{}?period=quarter&apikey={}'
-#'q_balance':'/api/v3/balance-sheet-statement/{}?period=quarter&apikey={}',
-#'q_income':'/api/v3/income-statement/{}?period=quarter&apikey={}',
-#'a_enterprise':'/api/v3/enterprise-values/{}?&apikey={}'
+dashboard_data = {**api_functions}
+#for function, link in api_functions.items():
+for function, link in api_functions.items():
+    SJM =API_call(companies['Ticker'].loc[0],link,config.API_key)
+    MGM = API_call(companies['Ticker'].loc[1],link,config.API_key)
+    GEG = API_call(companies['Ticker'].loc[2],link,config.API_key)
+    SANDS = API_call(companies['Ticker'].loc[3],link,config.API_key)
+    WYNN = API_call(companies['Ticker'].loc[4],link,config.API_key)
+    datalist = [SJM, MGM, GEG, SANDS, WYNN]
+    dashboard_data[function] = pd.concat(datalist,keys=companies['Name'].tolist())
+    dashboard_data[function].index.names=['Company','index']  
+# %%
+def cumilative(df):
+    df['Daily Returns'] = df['close'].pct_change()
+    df['Daily Cum. Return %'] = ((1 + df['Daily Returns']).cumprod()) * 100
+    return df
 
+dashboard_data['stock']=dashboard_data['stock'].groupby(level=0, axis =0).apply(cumilative)
+dashboard_data['ratios']['year']=dashboard_data['ratios']['date'].dt.year
+dashboard_data['dividend']['quarters']=dashboard_data['dividend']['date'].dt.quarter
+dashboard_data['dividend']['year']=dashboard_data['dividend']['date'].dt.year
+dashboard_data['dividend']['columnText']=('Q'
+                                    +dashboard_data['dividend']['quarters'].astype(str)
+                                    +' '
+                                    +dashboard_data['dividend']['year'].astype(str))
+dashboard_data['dividend']= dashboard_data['dividend'].merge(dashboard_data['stock'], left_on=['Company','date'], right_on=['Company','date']).set_index(dashboard_data['dividend'].index)
+dashboard_data['dividend']['divYield'] = dashboard_data['dividend']['adjDividend']/dashboard_data['dividend']['close']
+dashboard_data['a_DCF']['undervalue'] = ((dashboard_data['a_DCF']['price'] / dashboard_data['a_DCF']['dcf']))
+#dashboard_data['dividend'] = dashboard_data['dividend'].merge(dashboard_data['stock'], left_index=True, right_on=['Company','date'])
+#dashboard_data['dividend']= dashboard_data['dividend'].merge(dashboard_data['stock'], left_on=['Company','date'], right_on=['Company','date']).set_index('index')
+#if not dashboard_data['DCF'].empty:
+#    dashboard_data['DCF']['undervalue'] = ((dashboard_data['stock']['close'] / dashboard_data['DCF']['dcf']))
+# %%
+fig = go.Figure()
+ymax = dashboard_data['a_DCF']['undervalue'].max()*1.05
+fig.add_hline(y=1, line_dash='dash')
+fig.add_hrect(y0=0, 
+                    y1=1, 
+                    line_width=0, 
+                    fillcolor="green", 
+                    opacity=0.2, 
+                    annotation_text='UNDERVALUED', 
+                    annotation_position='top left',
+                    layer='below')
+fig.add_hrect(y0=1, 
+                    y1=ymax, 
+                    line_width=0, 
+                    fillcolor="red", 
+                    opacity=0.2,
+                    annotation_text='OVERVALUED', 
+                    annotation_position='bottom left',
+                    layer = 'below')
+for n, df in dashboard_data['a_DCF'].groupby(level=0):
+    fig.add_trace(go.Scatter(name=n, 
+                    x=df['date'], 
+                    y= df['undervalue'])
+                                       )
+
+fig.update_yaxes(zeroline=False)
+fig.update_layout(
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+)
+fig.show()
 
 # %%
-#call API and store results
-AAPL = []
-for function,link in api_functions.items():
-  url = site+(link.format(ticker,API_key))
-  response = requests.get(url)
-  data = response.json()
-  if function == 'stock' or function =='dividend':
-    df = pd.json_normalize(data,'historical')
-    df.sort_values('date',ascending=True,inplace=True)
-    df['date'] =  pd.to_datetime(df['date'])
-#    df['year'] = df['date'].dt.year
-    AAPL.append(df)
-  else: 
-    df = pd.json_normalize(data)
-    df.sort_values('date',ascending=True,inplace=True)
-    df['date'] =  pd.to_datetime(df['date'])
-    df['year'] = df['date'].dt.year
-    AAPL.append(df)
-AAPL[0]['Daily Returns'] = AAPL[0]['close'].pct_change()
-AAPL[0]['Daily Cum. Return %'] = ((1 + AAPL[0]['Daily Returns']).cumprod()) * 100
-AAPL[6]['undervalue'] = ((AAPL[0]['close'] / AAPL[6]['dcf']))
-AAPL[5] = AAPL[5].merge(AAPL[0][['date', 'close']], on='date')
-AAPL[5]['divYield'] = AAPL[5]['adjDividend']/AAPL[5]['close']
-AAPL[5]['quarters']=AAPL[5]['date'].dt.quarter
-AAPL[5]['year']=AAPL[5]['date'].dt.year
-AAPL[5]['columnText']='Q'+AAPL[5]['quarters'].astype(str)+' '+AAPL[5]['year'].astype(str)
-# %% [markdown]
-#AAPL[1] -> dividendYield
-#AAPL[1] -> payoutRatio
-#AAPL[1] -> dividendPayoutRatio
-# %%
-fig= go.Figure()
+#fig= go.Figure()
+
+#sorteddflist= sorted(dflist,key=lambda x:x["age"].max(axis=0))
+
+""" for n, df in dashboard_data['dividend'].groupby(level=0):
+    fig.add_trace(go.Bar(name=n, 
+                    x=df['columnText'], 
+                    y= df['adjDividend'],
+                    xperiod='M1',
+                    xperiodalignment='middle')
+                    
+                    ) """
+fig = go.Figure()
 fig = make_subplots(specs=[[{"secondary_y": True}]])
-
+df = dashboard_data['dividend']['SJM']
 fig.add_trace(go.Bar(name='Dividends', 
-                    x=AAPL[5]['columnText'], 
-                    y= AAPL[5]['adjDividend'],
+                    x=df['columnText'], 
+                    y= df['adjDividend'],
                     xperiod='M1',
                     xperiodalignment='middle')
                     ,secondary_y=False
                     )
 
-fig.add_trace(go.Scatter(x = AAPL[5]['columnText'], y =AAPL[5]['divYield'],
+fig.add_trace(go.Scatter(x = df['columnText'], 
+                        y =df['divYield'],
                   mode = 'lines+markers',
                   line_shape= 'spline',
                   name='Dividend Yield', 
                   xperiod='M1',
                   xperiodalignment='middle'),secondary_y=True)
 fig.update_layout(
+    hovermode='x unified',
     paper_bgcolor = 'rgba(0,0,0,0)',
     plot_bgcolor='rgba(0,0,0,0)',
-    hovermode='x unified',
     yaxis=dict(
-        title='Dividend per share (DPS)',
+        title='Diividend per share (DPS)',
         tickprefix='$'
     ),
     yaxis2=dict(
@@ -130,32 +305,68 @@ fig.update_layout(
         overlaying='y',
         side='right',
         tickformat='.2%'
+    )
 )
-)
-#
-#
-#fig.update_xaxes(
-#    type='category',
-#    ticktext=AAPL[5]['columnText'],
-#    tickvals=AAPL[5]['date'],
-#)
-
-#fig.update_xaxes(type='category',
-#                dtick='M1',
-#                tickformat='%b\b%Y')
-#fig.update_layout(
-#    xaxis_tickformatstops = [
-#        dict(dtickrange=["M1", "M12"], value="%b \n %Y"),
-#        dict(dtickrange=["M12", None], value="%q \n %Y")
-#    ]
-#)
-#fig.update_xaxes(dtick='M1',
-#                tickformat='%q\n%Y')
-#.dt.strftime('%m-%Y')
-#fig.update_layout(yaxis_tickformat='.2%',secondary_y=True)
 fig.show()
 
+# %%
 
+#xaxis_tickmode = 'array',
+#paper_bgcolor = 'rgba(0,0,0,0)',
+#plot_bgcolor='rgba(0,0,0,0)',
+#yaxis_showgrid = False
+#xaxis_tickvals = AAPL[1]['year'],
+#xaxis_ticktext = AAPL[1]['year'],
+ROCE=go.Figure()
+for n, df in dashboard_data['ratios'].groupby(level=0):
+    ROCE.add_trace(go.Scatter(x = df['year'], y =df['returnOnCapitalEmployed'],
+                    name = n,
+                    mode = 'lines+markers',
+                    line_shape= 'spline'))
+ROCE.update_layout(xaxis_tickmode = 'array',
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)')
+
+
+ROE = go.Figure()
+for n, df in dashboard_data['ratios'].groupby(level=0):
+    ROE.add_trace(go.Scatter(x = df['year'], y =df['returnOnEquity'],
+                    name = n,
+                    mode = 'lines+markers',
+                    line_shape = 'spline'))
+
+PEG = go.Figure()
+for n, df in dashboard_data['ratios'].groupby(level=0):
+    PEG.add_trace(go.Scatter(x = df['year'], y =df['priceEarningsToGrowthRatio'],
+                    name = n,
+                    mode = 'lines+markers',
+                    line_shape= 'spline'))
+
+P_B = go.Figure()
+for n, df in dashboard_data['ratios'].groupby(level=0):
+    P_B.add_trace(go.Scatter(x = ['year'], y =['priceToBookRatio'],
+                    name = n,
+                    mode = 'lines+markers',
+                    line_shape= 'spline'))
+P_E = go.Figure()
+for n, df in dashboard_data['ratios'].groupby(level=0):
+    P_E.add_trace(go.Scatter(x = df['year'], y =df['priceEarningsRatio'],
+                    name = n,
+                    mode = 'lines+markers',
+                    line_shape= 'spline'))
+ROA = go.Figure()
+for n, df in dashboard_data['ratios'].groupby(level=0):
+    ROA.add_trace(go.Scatter(x = df['year'], y =df['returnOnAssets'],
+                    name = n,
+                    mode = 'lines+markers',
+                    line_shape= 'spline'))
+
+#fig.update_traces()
+
+# %% [markdown]
+#AAPL[1] -> dividendYield
+#AAPL[1] -> payoutRatio
+#AAPL[1] -> dividendPayoutRatio
 # %%
 app = dash.Dash(external_stylesheets=[dbc.themes.DARKLY])
 

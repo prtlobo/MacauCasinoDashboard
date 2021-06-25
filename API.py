@@ -1,50 +1,72 @@
 import pandas as pd
 import requests
-#API_key = '3c48cfed0ed8536fa3d40f9234fed1fb'
-#API_key = 'demo'
-#ticker = 'AAPL'
+import config
 
-#'q_cash':'/api/v3/cash-flow-statement/{}?period=quarter&apikey={}'
-#'q_balance':'/api/v3/balance-sheet-statement/{}?period=quarter&apikey={}',
-#'q_income':'/api/v3/income-statement/{}?period=quarter&apikey={}',
-#'a_enterprise':'/api/v3/enterprise-values/{}?&apikey={}'
+# Define API GET request
+def API_call(ticker, link, key):
+    #Format API GET url for desired functions
+    url = 'https://financialmodelingprep.com'+(link.format(ticker, key))
+    response = requests.get(url)
+    data = response.json()
+    #If the function returns a nested json, need to normalize on key
+    #For FMP, historical stock and dividends are nested
+    if len(data) == 2:
+        df = pd.json_normalize(data,'historical')
+        df.sort_values('date',ascending=True,inplace=True, ignore_index=True)
+        df['date'] =  pd.to_datetime(df['date'])
+#        df.set_index(keys='date',inplace=True)
+    elif len(data) > 2:
+        df = pd.json_normalize(data)
+        df.sort_values('date',ascending=True,inplace=True, ignore_index=True)
+        df['date'] =  pd.to_datetime(df['date'])
+#        df.set_index(keys='date',inplace=True)
+    else:
+        df = pd.DataFrame()
+    return df
 
-def fmp_call(ticker,API_key):
-  site = 'https://financialmodelingprep.com'
-  api_functions = {'stock':'/api/v3/historical-price-full/{}?serietype=line&apikey={}',
+def cumilative(df):
+    df['Daily Returns'] = df['close'].pct_change()
+    df['Daily Cum. Return %'] = ((1 + df['Daily Returns']).cumprod()) * 100
+    return df
+
+companies = pd.DataFrame(
+    {'Name':['SJM','MGM','GEG','SANDS','WYNN'],
+    'Ticker':['0880.HK','2282.HK','0027.HK','1928.HK','1128.HK'],
+    'Color':['red','green','pink','blue','yellow']
+    })
+
+api_functions = {'stock':'/api/v3/historical-price-full/{}?serietype=line&apikey={}',
                 'ratios':'/api/v3/ratios/{}?apikey={}',
                 'a_income':'/api/v3/income-statement/{}?&apikey={}',
                 'a_balance': '/api/v3/balance-sheet-statement/{}?&apikey={}',
                 'a_cash':'/api/v3/cash-flow-statement/{}?&apikey={}',
                 'dividend':'/api/v3/historical-price-full/stock_dividend/{}?apikey={}',
-                'DCF':'/api/v3/historical-daily-discounted-cash-flow/{}?&apikey={}'               
-  }
-  df_results = []
-  for function,link in api_functions.items():
-    url = site+(link.format(ticker,API_key))
-    response = requests.get(url)
-    data = response.json()
-    if function == 'stock' or function =='dividend':
-      df = pd.json_normalize(data,'historical')
-      df.sort_values('date',ascending=True,inplace=True)
-      df['date'] =  pd.to_datetime(df['date'])
-      df_results.append(df)
-    else:
-      df = pd.json_normalize(data)
-      df.sort_values('date',ascending=True,inplace=True)
-      df['date'] =  pd.to_datetime(df['date'])
-      df['year'] = df['date'].dt.year
-      df_results.append(df)
-  df_results[0]['Daily Returns'] = df_results[0]['close'].pct_change()
-  df_results[0]['Daily Cum. Return %'] = ((1 + df_results[0]['Daily Returns']).cumprod()) * 100
-  df_results[6]['undervalue'] = ((df_results[0]['close'] / df_results[6]['dcf']))
-  df_results[5] = df_results[5].merge(df_results[0][['date', 'close']], on='date')
-  df_results[5]['divYield'] = df_results[5]['adjDividend']/df_results[5]['close']
-  df_results[5]['quarters']=df_results[5]['date'].dt.quarter
-  df_results[5]['year']=df_results[5]['date'].dt.year
-  df_results[5]['columnText']='Q'+df_results[5]['quarters'].astype(str)+' '+df_results[5]['year'].astype(str)
-  return df_results
+                'd_DCF':'/api/v3/historical-daily-discounted-cash-flow/{}?&apikey={}',
+                'a_DCF':'/api/v3/historical-discounted-cash-flow-statement/{}?&apikey={}'
+}
 
-API_key = 'demo'
-ticker = 'AAPL'
-AAPL = fmp_call(ticker, API_key)
+dashboard_data = {**api_functions}
+#for function, link in api_functions.items():
+for function, link in api_functions.items():
+    SJM =API_call(companies['Ticker'].loc[0],link,config.API_key)
+    MGM = API_call(companies['Ticker'].loc[1],link,config.API_key)
+    GEG = API_call(companies['Ticker'].loc[2],link,config.API_key)
+    SANDS = API_call(companies['Ticker'].loc[3],link,config.API_key)
+    WYNN = API_call(companies['Ticker'].loc[4],link,config.API_key)
+    datalist = [SJM, MGM, GEG, SANDS, WYNN]
+    dashboard_data[function] = pd.concat(datalist,keys=companies['Name'].tolist())
+    dashboard_data[function].index.names=['Company','index']
+
+dashboard_data['stock']=dashboard_data['stock'].groupby(level=0, axis =0).apply(cumilative)
+dashboard_data['ratios']['year']=dashboard_data['ratios']['date'].dt.year
+dashboard_data['dividend']['quarters']=dashboard_data['dividend']['date'].dt.quarter
+dashboard_data['dividend']['year']=dashboard_data['dividend']['date'].dt.year
+dashboard_data['dividend']['columnText']=('Q'
+                                    +dashboard_data['dividend']['quarters'].astype(str)
+                                    +' '
+                                    +dashboard_data['dividend']['year'].astype(str))
+dashboard_data['dividend']= dashboard_data['dividend'].merge(dashboard_data['stock'],
+                                                             left_on=['Company','date'], 
+                                                            right_on=['Company','date']).set_index(dashboard_data['dividend'].index)
+dashboard_data['dividend']['divYield'] = dashboard_data['dividend']['adjDividend']/dashboard_data['dividend']['close']
+dashboard_data['a_DCF']['undervalue'] = ((dashboard_data['a_DCF']['price'] / dashboard_data['a_DCF']['dcf']))

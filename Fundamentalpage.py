@@ -11,11 +11,16 @@ from plotly.subplots import make_subplots
 import dash_bootstrap_components as dbc
 import plotly.io as pio
 
-from API import AAPL, ticker
+
 from app import app
-fundamentals= make_subplots(
+from API import dashboard_data
+
+""" fundamentals= make_subplots(
     rows=6, cols=1,
-    subplot_titles=("Plot 1", "Plot 2", "Plot 3", "Plot 4", 'plot 5','plot 6'),
+    subplot_titles=('Return on Capital Employed',
+                     'Return On Equity',
+                     'Price/Earnings To Growth', 
+                     'Price/Book', 'Price/Earnings','Return on Assets'),
     shared_xaxes=True)
 fundamentals.add_trace(go.Scatter(x = AAPL[1]['year'], y =AAPL[1]['returnOnCapitalEmployed'],
                   name = 'ROCE',
@@ -52,89 +57,111 @@ fundamentals.update_layout(
 
 fundamentals.update_xaxes(tickmode = 'array',tickvals = AAPL[1]['year'],
     ticktext = AAPL[1]['year'], gridcolor='#a0a0a0', showticklabels=True)
-fundamentals.update_yaxes(showgrid = False)
-""" ROCE=go.Scatter(x = AAPL[1]['year'], y =AAPL[1]['returnOnCapitalEmployed'],
-                  name = 'ROCE',
-                  mode = 'lines+markers',
-                  line_shape= 'spline')
-ROE = go.Scatter(x = AAPL[1]['year'], y =AAPL[1]['returnOnEquity'],
-                  name = 'ROE',
-                  mode = 'lines+markers',
-                  line_shape = 'spline')
-PEG = go.Scatter(x = AAPL[1]['year'], y =AAPL[1]['priceEarningsToGrowthRatio'],
-                  name = 'PEG',
-                  mode = 'lines+markers',
-                  line_shape= 'spline')
-P_B = go.Scatter(x = AAPL[1]['year'], y =AAPL[1]['priceToBookRatio'],
-                  name = 'P/B',
-                  mode = 'lines+markers',
-                  line_shape= 'spline')
-P_E = go.Scatter(x = AAPL[1]['year'], y =AAPL[1]['priceEarningsRatio'],
-                  name = 'P/E',
-                  mode = 'lines+markers',
-                  line_shape= 'spline')
-ROA = go.Scatter(x = AAPL[1]['year'], y =AAPL[1]['returnOnAssets'],
-                  name = 'ROA',
-                  mode = 'lines+markers',
-                  line_shape= 'spline') """
+fundamentals.update_yaxes(showgrid = False) """
 
-""" layout_ratios = go.Layout(
-    xaxis_tickmode = 'array',
-    xaxis_tickvals = AAPL[1]['year'],
-    xaxis_ticktext = AAPL[1]['year'],
+ROCE=go.Figure()
+for n, df in dashboard_data['ratios'].groupby(level=0):
+    ROCE.add_trace(go.Scatter(x = df['year'], y =df['returnOnCapitalEmployed'],
+                    name = n,
+                    mode = 'lines+markers',
+                    line_shape= 'spline'))
+ROCE.update_layout(
     paper_bgcolor = 'rgba(0,0,0,0)',
     plot_bgcolor='rgba(0,0,0,0)',
-    yaxis_showgrid = False,
-    yaxis_showgrid = False) """
+    yaxis_showgrid = False)
+ROE=go.Figure()
+for n, df in dashboard_data['ratios'].groupby(level=0):
+    ROE.add_trace(go.Scatter(x = df['year'], y =df['returnOnEquity'],
+                    name = n,
+                    mode = 'lines+markers',
+                    line_shape = 'spline'))
+ROE.update_layout(
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+    yaxis_showgrid = False)
+PEG=go.Figure()
+for n, df in dashboard_data['ratios'].groupby(level=0):
+    PEG.add_trace(go.Scatter(x = df['year'], y =df['priceEarningsToGrowthRatio'],
+                    name = n,
+                    mode = 'lines+markers',
+                    line_shape= 'spline'))
+PEG.update_layout(
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+    yaxis_showgrid = False)
+P_B=go.Figure()
+for n, df in dashboard_data['ratios'].groupby(level=0):
+    P_B.add_trace(go.Scatter(x = df['year'], y =df['priceToBookRatio'],
+                    name = n,
+                    mode = 'lines+markers',
+                    line_shape= 'spline'))
+P_B.update_layout(
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+    yaxis_showgrid = False)
+P_E=go.Figure()
+for n, df in dashboard_data['ratios'].groupby(level=0):
+    P_E.add_trace(go.Scatter(x = df['year'], y =df['priceEarningsRatio'],
+                    name = n,
+                    mode = 'lines+markers',
+                    line_shape= 'spline'))
+P_E.update_layout(
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+    yaxis_showgrid = False)
+ROA=go.Figure()
+for n, df in dashboard_data['ratios'].groupby(level=0):
+    ROA.add_trace(go.Scatter(x = df['year'], y =df['returnOnAssets'],
+                    name = n,
+                    mode = 'lines+markers',
+                    line_shape= 'spline'))
+ROA.update_layout(
+    paper_bgcolor = 'rgba(0,0,0,0)',
+    plot_bgcolor='rgba(0,0,0,0)',
+    yaxis_showgrid = False)
 
-""" ROCE_plot = go.Figure(data=ROCE,layout=layout_ratios)
-ROE_plot = go.Figure(data=ROE,layout=layout_ratios)
-PEG_plot = go.Figure(data=PEG,layout=layout_ratios)
-P_B_plot = go.Figure(data=P_B,layout=layout_ratios)
-P_E_plot = go.Figure(data=P_E,layout=layout_ratios)
-ROA_plot = go.Figure(data=ROA,layout=layout_ratios) """
-
-""" fundamentallayout = html.Div(children=[
+fundamentallayout = html.Div(children=[
  html.Div([
         html.H3('Return on Capital Employed'),
-        html.Div(id='result3'),
+        html.Div(id='fundamentalpage1'),
         
-        dcc.Graph(id='graph3', figure=ROCE_plot)
+        dcc.Graph(id='ROCE', figure=ROCE)
     ]),
 
     html.Div([
         html.H3('Return on Equity'),
-        html.Div(id='result4'),
+        html.Div(id='fundamentalpage2'),
         
-        dcc.Graph(id='graph4', figure=ROE_plot)
+        dcc.Graph(id='ROE', figure=ROE)
     ]),
 
     html.Div([
         html.H3('Price to Earning Growth Ratio'),
-        html.Div(id='result5'),
+        html.Div(id='fundamentalpage3'),
         
-        dcc.Graph(id='graph5', figure=PEG_plot)
+        dcc.Graph(id='PEG', figure=PEG)
     ]),
 
     html.Div([
         html.H3('Price to Book Ratio'),
-        html.Div(id='result6'),
+        html.Div(id='fundamentalpage4'),
         
-        dcc.Graph(id='graph6', figure=P_B_plot)
+        dcc.Graph(id='P_B', figure=P_B)
     ]),
     html.Div([
         html.H3('Price to Earnings Ratio'),
-        html.Div(id='result7'),
+        html.Div(id='fundamentalpage5'),
         
-        dcc.Graph(id='graph7', figure=P_E_plot)
+        dcc.Graph(id='P_E', figure=P_E)
     ])
 
-]) """
-fundamentallayout = html.Div(children=[
+])
+
+""" fundamentallayout = html.Div(children=[
  html.Div([
         html.H3('Fundamental Ratios'),
         html.Div(id='result3'),
         
         dcc.Graph(id='graph3', figure=fundamentals)
     ])
-]) 
+])  """

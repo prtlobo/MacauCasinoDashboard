@@ -11,13 +11,15 @@ from plotly.subplots import make_subplots
 import dash_bootstrap_components as dbc
 import plotly.io as pio
 
-from API import AAPL, ticker
+
 from app import app
+from API import dashboard_data
 
 stock=go.Figure()
-stock.add_trace(go.Scatter(x=AAPL[0]['date'], y=AAPL[0]['close'],
-  mode='lines',
-  name=ticker))
+for n, df in dashboard_data['stock'].groupby(level=0):
+    stock.add_trace(go.Scatter(x=df['date'], y=df['close'],
+    mode='lines',
+    name=n))
 stock.update_layout(
     hovermode = 'x',
     showlegend=True,
@@ -46,10 +48,11 @@ stock.update_yaxes(
                 showgrid =False
     )
 cumilative=go.Figure()
-cumilative.add_trace(go.Scatter(x=AAPL[0]['date'], y=AAPL[0]['Daily Cum. Return %'],
-                  mode='lines',
-                  showlegend = True,
-                  name=ticker))
+for n, df in dashboard_data['stock'].groupby(level=0):
+    cumilative.add_trace(go.Scatter(x=df['date'], y=df['Daily Cum. Return %'],
+                    mode='lines',
+                    showlegend = True,
+                    name=n))
 
 cumilative.update_layout(
     hovermode = 'x',
@@ -65,17 +68,18 @@ cumilative.update_yaxes(
                 showgrid =False
     )
 homelayout = html.Div(children=[
+    
     html.Div([
         html.H3(children='Stock Price'),
-        html.Div(id='result1'),
+        html.Div(id='homepage1'),
         
-        dcc.Graph(id='graph1',figure=stock)
+        dcc.Graph(id='stock',figure=stock,animate=True)
     ]),
 
     html.Div([
         html.H3('Daily Cumilative Returns since IPO'),
-        html.Div(id='result2'),
+        html.Div(id='homepage2'),
         
-        dcc.Graph(id='graph2', figure=cumilative)
+        dcc.Graph(id='cumilative', figure=cumilative,animate=True)
     ])
 ])

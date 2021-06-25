@@ -11,12 +11,14 @@ from plotly.subplots import make_subplots
 import dash_bootstrap_components as dbc
 import plotly.io as pio
 
-from API import fmp_call
+import config
 from app import app
 from homepage import homelayout
 from Fundamentalpage import fundamentallayout
+from financialhealth import financialhealthlayout
 
-
+#if not dashboard_data['DCF'].empty:
+#    dashboard_data['DCF']['undervalue'] = ((dashboard_data['stock']['close'] / dashboard_data['DCF']['dcf']))
 
 # we use the Row and Col components to construct the sidebar header
 # it consists of a title, and a toggle, the latter is hidden on large screens
@@ -84,7 +86,7 @@ sidebar = html.Div(
                 [
                     dbc.NavLink('Stock Information', href="/", active="exact"),
                     dbc.NavLink('Fundamental Ratios', href="/page-1", active="exact"),
-                    dbc.NavLink("Page 2", href="/page-2", active="exact"),
+                    dbc.NavLink("Financial Health", href="/page-2", active="exact"),
                 ],
                 vertical=True,
                 pills=True,
@@ -107,7 +109,7 @@ def render_page_content(pathname):
     elif pathname == "/page-1":
         return fundamentallayout
     elif pathname == "/page-2":
-        return html.P("Oh cool, this is page 2!")
+        return financialhealthlayout
     # If the user tries to reach a different page, return a 404 message
     return dbc.Jumbotron(
         [
