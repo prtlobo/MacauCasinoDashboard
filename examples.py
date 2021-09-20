@@ -1,5 +1,5 @@
-# %% 
-# #link zoom and pan to another figure
+
+#link zoom and pan to another figure
 """ app=dash.Dash()
 
 app.layout = html.Div([
@@ -26,7 +26,7 @@ return fig
 
 app.run_server() """
 
-# %%
+
 """ fig= go.Figure()
 #fig = make_subplots(specs=[[{"secondary_y": True}]])
 fig.add_trace(go.Bar(name='Dividends', x=AAPL[5]['date'], y= AAPL[5]['adjDividend'], xperiod='M1',xperiodalignment='middle'))
@@ -40,3 +40,4 @@ fig.add_trace(go.Bar(name='Dividends', x=AAPL[5]['date'], y= AAPL[5]['adjDividen
 #.dt.strftime('%m-%Y')
 
 fig.show() """
+

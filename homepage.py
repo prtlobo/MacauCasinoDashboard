@@ -1,13 +1,12 @@
 import pandas as pd
 import plotly.graph_objects as go
-import requests
 import dash
-import plotly
+#import plotly
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Output, Input, State
-import datetime
-from plotly.subplots import make_subplots
+#import datetime
+#from plotly.subplots import make_subplots
 import dash_bootstrap_components as dbc
 import plotly.io as pio
 
@@ -15,16 +14,37 @@ import plotly.io as pio
 from app import app
 from API import dashboard_data
 
+""" def cumilative(df):
+    df['Daily Returns'] = df['close'].pct_change()
+    df['Daily Cum. Return %'] = ((1 + df['Daily Returns']).cumprod()) * 100
+    return df
+def sort_df(df,column):
+    df=df.reindex(index=df.groupby(level=0)[column].tail(1) \
+                        .sort_values(ascending=False) \
+                        .index \
+                        .get_level_values(0),
+                level=0)
+    return df
+#dashboard_data = API_call()
+
+dashboard_data['stock']=dashboard_data['stock'].groupby(level=0, axis =0).apply(cumilative)
+
 stock=go.Figure()
 for n, df in dashboard_data['stock'].groupby(level=0):
     stock.add_trace(go.Scatter(x=df['date'], y=df['close'],
     mode='lines',
-    name=n))
+    name=n,
+    ))
 stock.update_layout(
+    template='plotly_dark',
     hovermode = 'x',
     showlegend=True,
     paper_bgcolor = 'rgba(0,0,0,0)',
     plot_bgcolor='rgba(0,0,0,0)',
+    legend=dict(orientation='h'),
+    modebar=dict(orientation='v',
+                 bgcolor='rgba(0,0,0,0)'
+                 ),
     xaxis=dict(
         rangeslider_visible=True,
         rangeselector=dict(
@@ -52,9 +72,11 @@ for n, df in dashboard_data['stock'].groupby(level=0):
     cumilative.add_trace(go.Scatter(x=df['date'], y=df['Daily Cum. Return %'],
                     mode='lines',
                     showlegend = True,
-                    name=n))
+                    name=n,
+                    ))
 
 cumilative.update_layout(
+    template='plotly_dark',
     hovermode = 'x',
     paper_bgcolor = 'rgba(0,0,0,0)',
     plot_bgcolor='rgba(0,0,0,0)',
@@ -67,8 +89,9 @@ cumilative.update_xaxes(
 cumilative.update_yaxes(
                 showgrid =False
     )
-homelayout = html.Div(children=[
-    
+
+homelayout = html.Div([
+
     html.Div([
         html.H3(children='Stock Price'),
         html.Div(id='homepage1'),
@@ -83,3 +106,10 @@ homelayout = html.Div(children=[
         dcc.Graph(id='cumilative', figure=cumilative,animate=True)
     ])
 ])
+
+ """
+
+overviewlayout = html.Div([html.H3('Placeholder')
+
+
+ ])

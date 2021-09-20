@@ -1,72 +1,75 @@
-import pandas as pd
-import requests
+import asyncio
+from aiohttp import ClientSession
 import config
-
-# Define API GET request
-def API_call(ticker, link, key):
-    #Format API GET url for desired functions
-    url = 'https://financialmodelingprep.com'+(link.format(ticker, key))
-    response = requests.get(url)
-    data = response.json()
-    #If the function returns a nested json, need to normalize on key
-    #For FMP, historical stock and dividends are nested
-    if len(data) == 2:
-        df = pd.json_normalize(data,'historical')
-        df.sort_values('date',ascending=True,inplace=True, ignore_index=True)
-        df['date'] =  pd.to_datetime(df['date'])
-#        df.set_index(keys='date',inplace=True)
-    elif len(data) > 2:
-        df = pd.json_normalize(data)
-        df.sort_values('date',ascending=True,inplace=True, ignore_index=True)
-        df['date'] =  pd.to_datetime(df['date'])
-#        df.set_index(keys='date',inplace=True)
-    else:
-        df = pd.DataFrame()
-    return df
-
-def cumilative(df):
-    df['Daily Returns'] = df['close'].pct_change()
-    df['Daily Cum. Return %'] = ((1 + df['Daily Returns']).cumprod()) * 100
-    return df
-
+import pandas as pd
+from aiolimiter import AsyncLimiter
+import time
+#company name, company ticker on Hong Kong exchange, and colors extracted from their repective website/documents for representation
 companies = pd.DataFrame(
-    {'Name':['SJM','MGM','GEG','SANDS','WYNN'],
-    'Ticker':['0880.HK','2282.HK','0027.HK','1928.HK','1128.HK'],
-    'Color':['red','green','pink','blue','yellow']
+    {'name':['SJM','MGM','GEG','SANDS','WYNN'],
+    'ticker':['0880.HK','2282.HK','0027.HK','1928.HK','1128.HK'],
+    'color':['rgb(3,117,68)','rgb(139,110,74)','rgb(253,223,1)',' rgb(0,29,104)','rgb(254,0,0)']
     })
-
 api_functions = {'stock':'/api/v3/historical-price-full/{}?serietype=line&apikey={}',
                 'ratios':'/api/v3/ratios/{}?apikey={}',
                 'a_income':'/api/v3/income-statement/{}?&apikey={}',
                 'a_balance': '/api/v3/balance-sheet-statement/{}?&apikey={}',
                 'a_cash':'/api/v3/cash-flow-statement/{}?&apikey={}',
                 'dividend':'/api/v3/historical-price-full/stock_dividend/{}?apikey={}',
-                'd_DCF':'/api/v3/historical-daily-discounted-cash-flow/{}?&apikey={}',
-                'a_DCF':'/api/v3/historical-discounted-cash-flow-statement/{}?&apikey={}'
+                'dcf':'/api/v3/discounted-cash-flow/{}?apikey={}',
+                'a_DCF':'/api/v3/historical-discounted-cash-flow-statement/{}?&apikey={}',
+                'quote':'/api/v3/quote/{}?apikey={}'
 }
+#FMP has 10 request per second limit.
+rate_limit = AsyncLimiter(5, 0.5)
 
-dashboard_data = {**api_functions}
-#for function, link in api_functions.items():
-for function, link in api_functions.items():
-    SJM =API_call(companies['Ticker'].loc[0],link,config.API_key)
-    MGM = API_call(companies['Ticker'].loc[1],link,config.API_key)
-    GEG = API_call(companies['Ticker'].loc[2],link,config.API_key)
-    SANDS = API_call(companies['Ticker'].loc[3],link,config.API_key)
-    WYNN = API_call(companies['Ticker'].loc[4],link,config.API_key)
-    datalist = [SJM, MGM, GEG, SANDS, WYNN]
-    dashboard_data[function] = pd.concat(datalist,keys=companies['Name'].tolist())
-    dashboard_data[function].index.names=['Company','index']
-
-dashboard_data['stock']=dashboard_data['stock'].groupby(level=0, axis =0).apply(cumilative)
-dashboard_data['ratios']['year']=dashboard_data['ratios']['date'].dt.year
-dashboard_data['dividend']['quarters']=dashboard_data['dividend']['date'].dt.quarter
-dashboard_data['dividend']['year']=dashboard_data['dividend']['date'].dt.year
-dashboard_data['dividend']['columnText']=('Q'
-                                    +dashboard_data['dividend']['quarters'].astype(str)
-                                    +' '
-                                    +dashboard_data['dividend']['year'].astype(str))
-dashboard_data['dividend']= dashboard_data['dividend'].merge(dashboard_data['stock'],
-                                                             left_on=['Company','date'], 
-                                                            right_on=['Company','date']).set_index(dashboard_data['dividend'].index)
-dashboard_data['dividend']['divYield'] = dashboard_data['dividend']['adjDividend']/dashboard_data['dividend']['close']
-dashboard_data['a_DCF']['undervalue'] = ((dashboard_data['a_DCF']['price'] / dashboard_data['a_DCF']['dcf']))
+def json_to_df(data):
+    if len(data) == 1:
+        df = pd.json_normalize(data)
+    elif len(data) == 2:
+            df = pd.json_normalize(data,'historical')
+            df.sort_values('date',ascending=True,inplace=True, ignore_index=True)
+            df['date'] =  pd.to_datetime(df['date'])
+            df['year'] = df['date'].dt.year
+    elif len(data) > 2:
+        df = pd.json_normalize(data)
+        df.sort_values('date',ascending=True,inplace=True, ignore_index=True)
+        df['date'] =  pd.to_datetime(df['date'])
+        df['year'] = df['date'].dt.year
+    else:
+        df = pd.DataFrame()
+    return df
+def divide_responses(l, n):
+    for i in range(0, len(l), n): 
+        yield l[i:i + n]
+async def fetch(url, session):
+    async with rate_limit:
+        async with session.get(url) as response:
+            data = await response.json()
+            dataframe = json_to_df(data)
+            return dataframe
+def API_call():
+    async def main():
+        url = 'https://financialmodelingprep.com'
+        tasks = []
+        # Fetch all responses within one Client session,
+        # keep connection alive for all requests.
+        async with ClientSession() as session:
+            for link in api_functions.values():
+                for tick in companies['ticker']:
+                    task = asyncio.create_task(fetch(url+(link.format(tick,config.API_key)), session))
+                    tasks.append(task)
+                responses = await asyncio.gather(*tasks)
+                # you now have all response bodies in this variable
+            return responses
+#        return list_of_responses
+    loop = asyncio.get_event_loop()
+    future = asyncio.ensure_future(main())
+    list_of_responses = loop.run_until_complete(future)
+    dashboard_data = {**api_functions}
+    for n,function in enumerate(api_functions.keys()):
+        comp_list = list(divide_responses(list_of_responses,len(companies['name'])))
+        dashboard_data[function]=pd.concat(comp_list[n],keys=companies['name'].tolist())
+        dashboard_data[function].index.names=['Company','index']   
+    return dashboard_data
+dashboard_data=API_call()

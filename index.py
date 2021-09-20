@@ -1,24 +1,24 @@
-import pandas as pd
-import plotly.graph_objects as go
-import requests
+#import pandas as pd
+#import plotly.graph_objects as go
+#import requests
 import dash
-import plotly
+#import plotly
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Output, Input, State
-import datetime
-from plotly.subplots import make_subplots
+#import datetime
+#from plotly.subplots import make_subplots
 import dash_bootstrap_components as dbc
-import plotly.io as pio
+#import plotly.io as pio
 
-import config
+#import config
 from app import app
-from homepage import homelayout
-from Fundamentalpage import fundamentallayout
+#from homepage import overviewlayout
+from stock import stocklayout
+from valuations import valuationlayout
 from financialhealth import financialhealthlayout
-
-#if not dashboard_data['DCF'].empty:
-#    dashboard_data['DCF']['undervalue'] = ((dashboard_data['stock']['close'] / dashboard_data['DCF']['dcf']))
+from dividend import dividendlayout
+from earnings import earninglayout
 
 # we use the Row and Col components to construct the sidebar header
 # it consists of a title, and a toggle, the latter is hidden on large screens
@@ -73,8 +73,7 @@ sidebar = html.Div(
             [
                 html.Hr(),
                 html.P(
-                    "A responsive sidebar layout with collapsible navigation "
-                    "links.",
+                    'Explore the financials of the top casino hotels of Macau.\n Powered by data from Financial Modeling Prep',
                     className="lead",
                 ),
             ],
@@ -84,9 +83,13 @@ sidebar = html.Div(
         dbc.Collapse(
             dbc.Nav(
                 [
-                    dbc.NavLink('Stock Information', href="/", active="exact"),
-                    dbc.NavLink('Fundamental Ratios', href="/page-1", active="exact"),
+                    
+                    dbc.NavLink('Stock information', href="/", active="exact"),
+                    dbc.NavLink('Valuation', href="/page-1", active="exact"),
                     dbc.NavLink("Financial Health", href="/page-2", active="exact"),
+                    dbc.NavLink("Dividend", href="/page-3", active="exact"),
+                    dbc.NavLink("Earnings", href="/page-4", active="exact"),
+
                 ],
                 vertical=True,
                 pills=True,
@@ -104,12 +107,17 @@ app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
 
 @app.callback(Output("page-content", "children"), [Input("url", "pathname")])
 def render_page_content(pathname):
+    
     if pathname == "/":
-        return homelayout
+        return stocklayout
     elif pathname == "/page-1":
-        return fundamentallayout
+        return valuationlayout
     elif pathname == "/page-2":
         return financialhealthlayout
+    elif pathname == "/page-3":
+        return dividendlayout
+    elif pathname == "/page-4":
+        return earninglayout
     # If the user tries to reach a different page, return a 404 message
     return dbc.Jumbotron(
         [
