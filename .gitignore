@@ -4,7 +4,7 @@
 
 ### Python ###
 examples.py
-From Notebook.py
+testnotebook.py
 # API Key store
 .config
 config.py
