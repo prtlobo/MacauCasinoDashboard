@@ -95,7 +95,7 @@ def make_payout_scatter_figure(option,company):
                 )
     figure.update_layout(
         figure_layout,
-        hovermode = 'x unified'
+        hovermode = 'x'
         )
     return figure
 def make_payout_pie_figure(year, company):
@@ -104,7 +104,7 @@ def make_payout_pie_figure(year, company):
     df=dashboard_data['a_cash'].xs(company).loc[dashboard_data['a_cash'].xs(company)['date']==year,['netIncome','dividendsPaid']]
     df.reset_index(inplace=True,drop=True)
     #Color section of pie depending if net income was positive or negative
-    df['color']= ['crimson' if income <0 else 'forestgreen' for income in df['netIncome']]
+    df['color']= ['darkRed' if income <0 else 'forestgreen' for income in df['netIncome']]
     #color of dividends paid section
     color=[df['color'].loc[0],'darkslateblue']
     #get absolute value before plotting or else it won't work
@@ -187,15 +187,15 @@ def make_dividend_figure(company,y_column,option):
             )
         figure.update_layout(
             figure_layout,
-            hovermode = 'x unified',
+            hovermode = 'x',
             yaxis=dict(
-                title='Dividend per share (DPS)',
+                
                 tickprefix='$',
                 showgrid=False,
                 rangemode='tozero'
             ),
             yaxis2=dict(
-                title='Dividend Yield',
+                
                 anchor='y',
                 overlaying='y',
                 side='right',

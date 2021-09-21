@@ -1,26 +1,19 @@
-#import pandas as pd
-#import plotly.graph_objects as go
-#import requests
+
 import dash
-#import plotly
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Output, Input, State
-#import datetime
-#from plotly.subplots import make_subplots
-import dash_bootstrap_components as dbc
-#import plotly.io as pio
 
-#import config
+import dash_bootstrap_components as dbc
+
 from app import app
-#from homepage import overviewlayout
 from stock import stocklayout
 from valuations import valuationlayout
 from financialhealth import financialhealthlayout
 from dividend import dividendlayout
 from earnings import earninglayout
 
-# we use the Row and Col components to construct the sidebar header
+# Use the Row and Col components to construct the sidebar header
 # it consists of a title, and a toggle, the latter is hidden on large screens
 sidebar_header = dbc.Row(
     [
@@ -151,4 +144,4 @@ def toggle_collapse(n, is_open):
 
 
 if __name__ == "__main__":
-    app.run_server(debug=True)
+    app.run_server()
