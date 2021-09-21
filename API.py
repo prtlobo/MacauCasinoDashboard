@@ -3,7 +3,6 @@ from aiohttp import ClientSession
 import config
 import pandas as pd
 from aiolimiter import AsyncLimiter
-import time
 #company name, company ticker on Hong Kong exchange, and colors extracted from their repective website/documents for representation
 companies = pd.DataFrame(
     {'name':['SJM','MGM','GEG','SANDS','WYNN'],
@@ -55,12 +54,18 @@ def API_call():
         # Fetch all responses within one Client session,
         # keep connection alive for all requests.
         async with ClientSession() as session:
-            for link in api_functions.values():
-                for tick in companies['ticker']:
-                    task = asyncio.create_task(fetch(url+(link.format(tick,config.API_key)), session))
-                    tasks.append(task)
-                responses = await asyncio.gather(*tasks)
-                # you now have all response bodies in this variable
+            # try loop if there is error, sleep 1s then try again
+            while True:
+                try:
+                    for link in api_functions.values():
+                        for tick in companies['ticker']:
+                            task = asyncio.create_task(fetch(url+(link.format(tick,config.API_key)), session))
+                            tasks.append(task)
+                        # save responses in this variable
+                        responses = await asyncio.gather(*tasks)
+                    break
+                except:
+                    asyncio.sleep(1)
             return responses
 #        return list_of_responses
     loop = asyncio.get_event_loop()

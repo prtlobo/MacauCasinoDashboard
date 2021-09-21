@@ -200,12 +200,37 @@ dashboard_data['a_DCF']['undervalue'] = ((dashboard_data['a_DCF']['price'] / das
 
 # %%
 dashboard_data['dcf']['undervalue']=((dashboard_data['dcf']['Stock Price'] / dashboard_data['dcf']['dcf']))
+dashboard_data['dcf']['undervalue%']=1-dashboard_data['dcf']['undervalue']
+dashboard_data['dcf']['dcfstring'] = ['Undervalued' if x >= 0 else 'Overvalued' for x in dashboard_data['dcf']['undervalue%']]
+dashboard_data['dcf']['undervalue%']=abs(dashboard_data['dcf']['undervalue%'])
 dashboard_data['dcf'].reset_index(inplace=True)
 dashboard_data['dcf'].sort_values(by='undervalue',ascending=False,inplace=True)
 dashboard_data['dcf'].rename(columns={'Company':'name'},inplace=True)
 dashboard_data['dcf'].merge(right=companies,on='name')
 # %%
+output=go.Figure()
+output.add_trace(
+    go.Scatter(
+        x=dashboard_data['dcf']['undervalue'],
+        y=dashboard_data['dcf']['name'],
+        customdata=dashboard_data['dcf'][['Stock Price','dcf','dcfstring','undervalue%']],
+                    
+        hovertemplate='Price: %{customdata[0]} <br>DCF: %{customdata[1]:.2f} <br>%{customdata[2]} by: %{customdata[3]:.2%}',
+        mode='markers',
+        marker=dict(
+            symbol='152',
+            size=15,
+        
+        )
+    )
+)
+output.update_xaxes(
+    range=[0,1.5],
+    dtick=0.1
+)
 
+output.show()
+# %%
 #Create Earning and Revenue CAGR
 
 """ def CAGR_revenue(df, year):

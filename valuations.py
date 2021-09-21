@@ -27,15 +27,17 @@ from API import dashboard_data,companies
 
 dashboard_data['a_DCF']['undervalue'] = ((dashboard_data['a_DCF']['price'] / dashboard_data['a_DCF']['dcf']))
 dashboard_data['dcf']['undervalue']=((dashboard_data['dcf']['Stock Price'] / dashboard_data['dcf']['dcf']))
+dashboard_data['dcf']['undervalue%']=1-dashboard_data['dcf']['undervalue']
+dashboard_data['dcf']['dcfstring'] = ['Undervalued' if x >= 0 else 'Overvalued' for x in dashboard_data['dcf']['undervalue%']]
 dashboard_data['dcf'].reset_index(inplace=True)
 dashboard_data['dcf'].sort_values(by='undervalue',ascending=False,inplace=True)
 dashboard_data['dcf'].rename(columns={'Company':'name'},inplace=True)
 dashboard_data['dcf'] = dashboard_data['dcf'].merge(right=companies,on='name')
 layout = dict(
     template='plotly_dark',
-    hovermode = 'x',
     paper_bgcolor = 'rgba(0,0,0,0)',
     plot_bgcolor='rgba(0,0,0,0)',
+    hovermode = 'x',
     xaxis_showgrid = False,
     yaxis=dict(
         showgrid = False,
@@ -53,15 +55,19 @@ layout = dict(
         bgcolor='rgba(0,0,0,0)'
         )
     )
-
+#hovertemplate=('Price: %{customdata[1]} <br>'
+#                                'DCF: %{customdata[2]} <br>' 
+#                                '%{customdata[4]} by: %{customdata[3]:.2%}'),
 def make_bullet_figures(company,option):
     if option=='compare':
         output=go.Figure()
         output.add_trace(
             go.Scatter(
+                text='DCF',
                 x=dashboard_data['dcf']['undervalue'],
                 y=dashboard_data['dcf']['name'],
-                #customdata=[dashboard_data['dcf']['price'],dashboard_data['dcf']['price'],],
+                customdata=dashboard_data['dcf'][['Stock Price','dcf','dcfstring','undervalue%']],
+                hovertemplate='Price: %{customdata[0]} <br>DCF: %{customdata[1]:.2f} <br>%{customdata[2]} by: %{customdata[3]:.2%}<extra></extra>',
                 mode='markers',
                 marker=dict(
                     symbol='152',
