@@ -1,12 +1,9 @@
-
-import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Output, Input, State
-
 import dash_bootstrap_components as dbc
 
-from app import app
+from main_app import app
 from stock import stocklayout
 from valuations import valuationlayout
 from financialhealth import financialhealthlayout
@@ -144,4 +141,4 @@ def toggle_collapse(n, is_open):
 
 
 if __name__ == "__main__":
-    app.run_server()
+    app.run_server(debug=True)

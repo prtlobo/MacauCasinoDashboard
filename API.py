@@ -1,8 +1,12 @@
+import pandas as pd
 import asyncio
 from aiohttp import ClientSession
-import config
-import pandas as pd
 from aiolimiter import AsyncLimiter
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+SECRET_KEY = os.getenv('SECRET_KEY')
 #company name, company ticker on Hong Kong exchange, and colors extracted from their repective website/documents for representation
 companies = pd.DataFrame(
     {'name':['SJM','MGM','GEG','SANDS','WYNN'],
@@ -59,7 +63,7 @@ def API_call():
                 try:
                     for link in api_functions.values():
                         for tick in companies['ticker']:
-                            task = asyncio.create_task(fetch(url+(link.format(tick,config.API_key)), session))
+                            task = asyncio.create_task(fetch(url+(link.format(tick,SECRET_KEY)), session))
                             tasks.append(task)
                         # save responses in this variable
                         responses = await asyncio.gather(*tasks)

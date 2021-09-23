@@ -1,29 +1,11 @@
-# Earnings:
-#   Past earnings growth
-#   past revenue growth
-#   Earnings and revenue history
-#   Return on equity
-#   Return on assets
-#   Return on capital Employed
-
-# 5 Past performance:
-#   historical annual earnings growth
-#   5.1 earnings and revenue history line chart
-#   5.2 Past eanings growth analysis (5Y vs 1Y growth)
-#   5.3 Return on equity
-#   5.4 return on assets
-#   5.5 return on capital employed
-
-import pandas as pd
 import plotly.graph_objects as go
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Output, Input
-from datetime import datetime
 import dash_bootstrap_components as dbc
 import dash_daq as daq
 
-from app import app
+from main_app import app
 from API import dashboard_data,companies
 
 

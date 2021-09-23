@@ -1,28 +1,13 @@
-#   Financial health:
-#       Profit Margin
-#       Assets to liabilities
-#       Cash Flow
-# 6 financial health:
-#   6.1 financial position short term & long term assest vs liabilites bar chart
-#   6.2 Debt to equity history (debt vs equity line chart)
-#   6.3 balance sheet marimekko charts
-
-import pandas as pd
 import plotly.graph_objects as go
-import dash
-#import plotly
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Output, Input
-#import datetime
 from plotly.subplots import make_subplots
 import dash_bootstrap_components as dbc
-#import plotly.io as pio
 import dash_daq as daq
 
-from app import app
+from main_app import app
 from API import dashboard_data, companies
-
 
 figure_layout = dict(
     template='plotly_dark',

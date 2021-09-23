@@ -1,24 +1,14 @@
-# Macau Casino dashboard
-## This is a dashboard comparing the major casino hotels of Macao using their financial and stock data 
+# Macau Casino Financial Dashboard
+### This is a dashboard comparing and displaying the financials of Macao top casino hotels. Casinos included are Galaxy Entertainment Group (GEG), Wynn Resorts (WYNN), Sociedade de Jogos de Macau (SJM), MGM China Holdings (MGM), and Sands China (SANDS)*.
+##### * Melco Resorts & Entertainment Limited (MELCO) will be added at a later update as it is a NASDAQ listed stock (will need to convert USD to HKD)
+### Dashboard is python coded, designed and configured using [Plotly's Dash](https://plotly.com/dash/) app platform and then hosted on [pythonanywhere](https://www.pythonanywhere.com/).
+### Data is queried using the [Financial Modeling Prep ](https://financialmodelingprep.com/) API using the companies HKEX listed tickers. As the financials are based on the HKEX, all prices shown are in HKD. This is a demo but it can be easily configured to allow any number of companies listed in HKEX. 
+
 ### TO DO:
-* Sector Performance ratios?
-* add vertical lines with date and annotation (major news)
-* Graham Number: sqrt((22.5)(EPS)(Book Value Per Share))
-OR sqrt((22.5)(EPS)(shareholder's equity/shares outstanding))
-* DCF- Over/under value  By = (Current Price / Fair Value price ) - 1 * 100
-* Add different zoom levels units for dividend figure (tickformatstops)
-* Representative colors for each company for traces
-* Vectorize datafram functions to make it faster
-* input dcc.Loading for loading pages
-* format date axis to be two lines dtick & tickformat
-* add sector PE ratio
-* add industry PE ratio
-* use stock screener to get all industries in same industry/sector to get average values.
-* hotel/resorts/cruiselines or casinos/gaming
-* above depends on time taken and probably store in server once a day
-* change spike line styles
-* Health- change assets vs liability to stack bar charts with more information
-* earning & valuations - single mode ratios show ~~pie chart~~ bar chart next to it with hoverdata callback
-* add try except loop in API incase connection errors
-*  Add trend lines to data (LOWESS, Moving average)
-*  Sustainability
+* Add Melco by converting USD financials to HKD
+* Tweak Visuals/ design
+* Gather all financials of companies in same sector/industry to obtain average values.
+* Add better error handling in API call file
+* add vertical annotations to dates with major events (COVID, crackdowns,etc)
+* Add Graham's number charts
+* Add trend lines to data (LOWESS, Moving average)

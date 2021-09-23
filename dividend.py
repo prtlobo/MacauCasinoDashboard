@@ -1,18 +1,4 @@
-# 7 dividend:
-#   current dividend yield
-#   7.1 dividend yield vs market
-#   7.2 stability and growth of payments line chart
-#   7.3 Current payout to shareholders
-#   7.4 future payout to shareholders
-# Dividend:
-#   Dividend stability and growth
-#   Dividend payout ratio
-
-
-import pandas as pd
 import plotly.graph_objects as go
-#import dash
-#import plotly
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Output, Input
@@ -21,9 +7,8 @@ from plotly.subplots import make_subplots
 import dash_bootstrap_components as dbc
 import plotly.io as pio
 import dash_daq as daq
-#import json
 
-from app import app
+from main_app import app
 from API import dashboard_data,companies
 
 dashboard_data['dividend']['quarters']=dashboard_data['dividend']['date'].dt.quarter

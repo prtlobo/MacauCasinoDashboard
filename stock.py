@@ -1,47 +1,16 @@
 import pandas as pd
 import plotly.graph_objects as go
-import dash
-#import plotly
 import dash_core_components as dcc
 import dash_html_components as html
-from dash.dependencies import Output, Input, State
+from dash.dependencies import Output, Input
 from datetime import timedelta,datetime
-#from plotly.subplots import make_subplots
 import dash_bootstrap_components as dbc
-import plotly.io as pio
 import dash_daq as daq
 
-from app import app
+from main_app import app
 from API import dashboard_data,companies
-#pd.options.mode.chained_assignment = 'warn'
-#apply calculate daily cumilative growth
-""" def cumilative(df):
-    df['dailyReturn'] = df['close'].pct_change()
-    df['return%'] = ((1 + df['dailyReturn']).cumprod()) * 100
-    return df """
-# loop over by company then apply all periods
-# or loop over by period then apply all companies
-""" periods={
-    '6M':timedelta(days=182.5),
-    'YTD':timedelta(days=365),
-    '3Y':timedelta(days=365*3),
-    'IPO':'IPO'
-    }
-def cumilative(df,period):
-    if period == 'IPO':
-        period=df['date'].iloc[-1]-df['date'].iloc[0]
-    mask=(df['date']>df['date'].iloc[-1]-periods[period]) & (df['date']<=df['date'].iloc[-1])
-    df2=df.loc[mask]
-    df2['dailyReturn{}'.format(period)] = df2['close'].pct_change()
-    df2['return%{}'.format(period)] = ((1 + df2['dailyReturn{}'.format(period)]).cumprod()) * 100
-    return df2
-for p in periods:
-    dashboard_data['stock'].groupby(level=0,axis=0).apply(cumilative,p) """
 
-# Apply cumilative growth per company
-# Add bullet guages
-#dashboard_data['stock']=dashboard_data['stock'].groupby(level=0, axis =0).apply(cumilative)
-dashboard_data['quote']['earningsAnnouncement'] =  pd.to_datetime(dashboard_data['quote']['earningsAnnouncement'])
+dashboard_data['quote']['earningsAnnouncement'] = pd.to_datetime(dashboard_data['quote']['earningsAnnouncement'])
 dashboard_data['quote'].sort_values(by='price',inplace=True, ascending=False)
 figure_layout = dict(
     template='plotly_dark',

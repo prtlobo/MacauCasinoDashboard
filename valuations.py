@@ -1,28 +1,11 @@
-#   Valuation:
-#       Fair Value(DCF)
-#       Price to Earnings
-#       Price to Book
-#       Price to earnings Growth
-
-# 3 Valuation:
-#   price to earnings ratio
-#   3.1 share price vs fair value
-#   3.2 Price to earnings ratio
-#   3.3 Price to earning growth ratio
-#   3.4 Price to book ratio
-
-import pandas as pd
 import plotly.graph_objects as go
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Output, Input
-#import datetime
-#from plotly.subplots import make_subplots
 import dash_bootstrap_components as dbc
-#import plotly.io as pio
 import dash_daq as daq
 
-from app import app
+from main_app import app
 from API import dashboard_data,companies
 
 dashboard_data['a_DCF']['undervalue'] = ((dashboard_data['a_DCF']['price'] / dashboard_data['a_DCF']['dcf']))
@@ -55,9 +38,7 @@ layout = dict(
         bgcolor='rgba(0,0,0,0)'
         )
     )
-#hovertemplate=('Price: %{customdata[1]} <br>'
-#                                'DCF: %{customdata[2]} <br>' 
-#                                '%{customdata[4]} by: %{customdata[3]:.2%}'),
+
 def make_bullet_figures(company,option):
     if option=='compare':
         output=go.Figure()
