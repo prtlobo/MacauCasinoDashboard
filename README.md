@@ -1,7 +1,7 @@
 # Macau Casino Financial Dashboard
 ### This is a dashboard comparing and displaying the financials of Macao top casino hotels. Casinos included are Galaxy Entertainment Group (GEG), Wynn Resorts (WYNN), Sociedade de Jogos de Macau (SJM), MGM China Holdings (MGM), and Sands China (SANDS)*.
 ##### * Melco Resorts & Entertainment Limited (MELCO) will be added at a later update as it is a NASDAQ listed stock (will need to convert USD to HKD)
-### Dashboard is python coded, designed and configured using [Plotly's Dash](https://plotly.com/dash/) app platform and then hosted on [pythonanywhere](https://www.pythonanywhere.com/).
+### Dashboard is python coded, designed and configured using [Plotly's Dash](https://plotly.com/dash/) app platform and then hosted on [pythonanywhere](https://www.pythonanywhere.com/). You can visit my dashboard at [here](prtlobo.pythonanywhere.com).
 ### Data is queried using the [Financial Modeling Prep ](https://financialmodelingprep.com/) API using the companies HKEX listed tickers. As the financials are based on the HKEX, all prices shown are in HKD. This is a demo but it can be easily configured to allow any number of companies listed in HKEX. 
 
 ### TO DO:
