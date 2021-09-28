@@ -3,6 +3,7 @@
 ##### * Melco Resorts & Entertainment Limited (MELCO) will be added at a later update as it is a NASDAQ listed stock (will need to convert USD to HKD)
 ### Dashboard is python coded, designed and configured using [Plotly's Dash](https://plotly.com/dash/) app platform and then hosted on [pythonanywhere](https://www.pythonanywhere.com/). You can visit my dashboard at [here](http://prtlobo.pythonanywhere.com/).
 ### Data is queried using the [Financial Modeling Prep ](https://financialmodelingprep.com/) API using the companies HKEX listed tickers. As the financials are based on the HKEX, all prices shown are in HKD. This is a demo but it can be easily configured to allow any number of companies listed in HKEX. 
+### API file uses async and aiohttp to call FMP API for increased speed.
 
 ### TO DO:
 * Add Melco by converting USD financials to HKD
